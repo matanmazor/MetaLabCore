@@ -1,7 +1,7 @@
-function fil_mri_unzip(filename,subject);
-% function fil_mri_unzip(filename,subject)
+function fil_mri_unzip(FIL_id,subject)
+% function fil_mri_unzip(FIL_id,subject)
 %
-% Unzips the data from Charm, where filename is scan ID and subject is the
+% Unzips the data from Charm, where FIL_id is scan ID and subject is the
 % subject number in the study (starting at 1).
 %
 % Note that this function only works on FIL computer as that is the only
@@ -12,24 +12,28 @@ function fil_mri_unzip(filename,subject);
 % current directy
 cwd = pwd;
 
-% filesep
-fs = filesep;
+% load project params file. 
+% IMPORTANT: this file should be edited before using this script.
+load('D:\Documents\software\MetaLabCore\project_params.mat');
+
 
 % add import tool
-addpath(['C:',fs,'Users',fs,'dbang',fs,'Dropbox',fs,'Ego',fs,'Matlab',fs,'spm12',fs,'toolbox',fs,'Import_Archive']);
+addpath(fullfile(project_params.spm_dir, 'toolbox','Import_Archive'));
 
 % unzip data in this folder
-zipped   = ['C:',fs,'Users',fs,'dbang',fs,'Documents',fs,'MATLAB',fs,'brain_data',fs,'sensory_vs_decision',fs,'data_zipped',fs,filename];
+zipped   = fullfile(project_params.raw_dir ,FIL_id);
 
 % place unzipped data in this folder
-unzipped = ['C:',fs,'Users',fs,'dbang',fs,'Dropbox',fs,'Ego',fs,'Matlab',fs,'ucl',fs,'sensory_vs_decision',fs,'brain',fs,'data',fs,'s',num2str(subject)];
+unzipped = fullfile(project_params.data_dir ,'s',num2str(subject));
 
 % error if exist
-if exist(unzipped,'dir'); error('--already unzipped'); else; mkdir(unzipped); end;
+if exist(unzipped,'dir'); error('--already unzipped'); else mkdir(unzipped); end;
 
 % error if not at the FIL
 [~,name] = system('hostname');
-if ~strcmp(name(1:end-1),'motorhead'); error('--only works at the FIL'); end;
+% MM: Change to your FIL computer name (the name on the sticker attached
+% to your PC)
+if ~strcmp(name(1:end-1),project_params.hostname); error('--only works at the FIL'); end;
 
 % get folder names for unzipping
 cd(zipped);

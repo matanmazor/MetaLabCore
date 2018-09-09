@@ -14,116 +14,89 @@ cwd = pwd;
 %% Load subject details (see fil_subject_details)
 load('subject_details.mat');
 
-%% Numbers 
-n_fun = 5; % n functional run folders (main task)
-n_dum = 4; % n dummys
-
-%% Directory paths and targets
-fs          = filesep;
-dbpath      = getDropbox(0);
-dir_loc     = 'Localiser';
-dir_funct   = 'Functional';
-dir_block   = 'sess';
-dir_struct  = 'Structural';
-dir_fm      = 'Fieldmaps';
-dir_root    = [dbpath,fs,'ego',fs,'matlab',fs,'ucl',fs,'sensory_vs_decision',fs,'brain',fs,'data'];
+% load project params file. 
+% IMPORTANT: this file should be edited before using this script.
+load('D:\Documents\software\MetaLabCore\project_params.mat');
 
 %% Loop through scans
 for i_s = which_subjects;
     
     %% localiser
     % paths
-    old_path  = [dir_root,fs,'s',num2str(i_s),fs,subj{i_s}.scanid,num2str(subj{i_s}.localiser)];
-    new_path  = [dir_root,fs,'s',num2str(i_s),fs,dir_loc];
+    old_path  = fullfile(project_params.data_dir,'s',num2str(i_s),...
+                strcat(subj{i_s}.scanid, '_FIL.S', num2str(subj{i_s}.localiser)));
+    new_path  = fullfile(project_params.data_dir,'s',...
+                strcat('sub-',subj{i_s}.scanid),'loc');
+    
     % reorganise
-    if exist(old_path,'dir')==7;
-    fname     = spm_select('List',old_path,'^s.*\.nii$');
-    old_files = cellstr([repmat([old_path fs],size(fname,1),1) fname]); 
-    new_files = cellstr([repmat([new_path fs],size(fname,1),1) fname]); 
-    mkdir(new_path); for i = 1:size(old_files,1); copyfile(old_files{i},new_files{i}); end; rmdir(old_path,'s'); 
-    end
-
+    reorganize(old_path, new_path,1);
+    
     %% structural
     % paths
-    old_path  = [dir_root,fs,'s',num2str(i_s),fs,subj{i_s}.scanid,num2str(subj{i_s}.structural)];
-    new_path  = [dir_root,fs,'s',num2str(i_s),fs,dir_struct];
+    old_path  = fullfile(project_params.data_dir,'s',num2str(i_s),...
+                strcat(subj{i_s}.scanid, '_FIL.S', num2str(subj{i_s}.structural)));
+    new_path  = fullfile(project_params.data_dir,'s',...
+                strcat('sub-',subj{i_s}.scanid),'anat');
     % reorganise
-    if exist(old_path,'dir')==7;
-    fname     = spm_select('List',old_path,'^s.*\.nii$');
-    old_files = cellstr([repmat([old_path fs],size(fname,1),1) fname]); 
-    new_files = cellstr([repmat([new_path fs],size(fname,1),1) fname]); 
-    mkdir(new_path); for i = 1:size(old_files,1); copyfile(old_files{i},new_files{i}); end; rmdir(old_path,'s'); 
-    end
+    reorganize(old_path, new_path,1)
     
     %% functional
     % loop through functional scans
+    n_fun = length(subj{i_s}.functional); %number of functional runs
     for j = 1:n_fun;
-    % paths
-    old_path  = [dir_root,fs,'s',num2str(i_s),fs,subj{i_s}.scanid,num2str(subj{i_s}.functional(j))];
-    new_path  = [dir_root,fs,'s',num2str(i_s),fs,dir_funct,fs,dir_block,num2str(j)];
-    % reorganise
-    if exist(old_path,'dir')==7; 
-    fname     = spm_select('List',old_path,'^f.*\.nii$');
-    old_files = cellstr([repmat([old_path fs],size(fname,1),1) fname]); 
-    new_files = cellstr([repmat([new_path fs],size(fname,1),1) fname]); 
-    mkdir(new_path); for i = 1:size(old_files,1); copyfile(old_files{i},new_files{i}); end; rmdir(old_path,'s');
-    fname   = spm_select('List', new_path, '^f.*\.nii$');
-    cd(new_path); for d = 1:n_dum; delete(fname(d,:)); fprintf('Deleted dummy scan %s.\n',fname(d,:)); end; cd(cwd);
-    end
-    end
-    
-    %% motion
-    % paths
-    old_path  = [dir_root,fs,'s',num2str(i_s),fs,subj{i_s}.scanid,num2str(subj{i_s}.motion)];
-    new_path  = [dir_root,fs,'s',num2str(i_s),fs,dir_funct,fs,dir_block,num2str(n_fun+1)];
-    % reorganise
-    if exist(old_path,'dir')==7;
-    fname     = spm_select('List',old_path,'^f.*\.nii$');
-    old_files = cellstr([repmat([old_path fs],size(fname,1),1) fname]); 
-    new_files = cellstr([repmat([new_path fs],size(fname,1),1) fname]); 
-    mkdir(new_path); for i = 1:size(old_files,1); copyfile(old_files{i},new_files{i}); end; rmdir(old_path,'s');
-    fname   = spm_select('List', new_path, '^f.*\.nii$');
-    cd(new_path); for d = 1:n_dum; delete(fname(d,:)); fprintf('Deleted dummy scan %s.\n',fname(d,:)); end; cd(cwd);
+        % paths
+        old_path  = fullfile(project_params.data_dir,'s',num2str(i_s),...
+                strcat(subj{i_s}.scanid, '_FIL.S', num2str(subj{i_s}.functional(j))));    
+        new_path  = fullfile(project_params.data_dir,'s',...
+                strcat('sub-',subj{i_s}.scanid),'func', strcat('run-',num2str(j)));
+        % reorganise
+        reorganize(old_path, new_path,1)
+        fname   = spm_select('List', new_path, '^f.*\.nii$');
+        
+        %delete dummy scans
+        for d = 1:project_params.n_dum; 
+            delete(fullfile(new_path,fname(d,:))); 
+            fprintf('Deleted dummy scan %s.\n',fname(d,:)); 
+        end; 
     end
     
     %% fieldmaps
-    for j = 1:n_fun+1
+    for j = 1:n_fun
         % maps 1-2 (phase)
         % paths
-        old_path  = [dir_root,fs,'s',num2str(i_s),fs,subj{i_s}.scanid,num2str(subj{i_s}.fieldmaps(1))];
-        new_path  = [dir_root,fs,'s',num2str(i_s),fs,dir_fm,fs,dir_funct,fs,dir_block,num2str(j)];
+        old_path  = fullfile(project_params.data_dir,'s',num2str(i_s),...
+                strcat(subj{i_s}.scanid, '_FIL.S', num2str(subj{i_s}.fieldmaps(1))));    
+        new_path  = fullfile(project_params.data_dir,'s',...
+                strcat('sub-',subj{i_s}.scanid),'func', strcat('run-',num2str(j)));
         % reorganise
-        if exist(old_path,'dir')==7;
-        fname     = spm_select('List', old_path, '^s.*\.nii$');
-        old_files = cellstr([repmat([old_path fs],size(fname,1),1) fname]); 
-        new_files = cellstr([repmat([new_path fs],size(fname,1),1) fname]); 
-        mkdir(new_path); for i = 1:size(old_files,1); copyfile(old_files{i},new_files{i}); end; 
-        end
+        reorganize(old_path, new_path,0);
+        
         % map 3 (magnitude)
-        % paths
-        old_path  = [dir_root,fs,'s',num2str(i_s),fs,subj{i_s}.scanid,num2str(subj{i_s}.fieldmaps(2))];
-        new_path  = [dir_root,fs,'s',num2str(i_s),fs,dir_fm,fs,dir_funct,fs,dir_block,num2str(j)];
+        old_path  = fullfile(project_params.data_dir,'s',num2str(i_s),...
+                strcat(subj{i_s}.scanid, '_FIL.S', num2str(subj{i_s}.fieldmaps(2))));    
+        new_path  = fullfile(project_params.data_dir,'s',...
+                strcat('sub-',subj{i_s}.scanid),'func', strcat('run-',num2str(j)));
         % reorganise
-        if exist(old_path,'dir')==7;
-        fname     = spm_select('List', old_path, '^s.*\.nii$');
-        old_files = cellstr([repmat([old_path fs],size(fname,1),1) fname]); 
-        new_files = cellstr([repmat([new_path fs],size(fname,1),1) fname]); 
-        for i = 1:size(old_files,1); copyfile(old_files{i},new_files{i}); end;
-        end
+        reorganize(old_path, new_path,0);
+        
     end
     
     %% delete field maps
-    % maps 1-2
-    old_path  = [dir_root,fs,'s',num2str(i_s),fs,subj{i_s}.scanid,num2str(subj{i_s}.fieldmaps(1))];
-    if exist(old_path,'dir')==7; rmdir(old_path,'s'); end
-    % maps 3
-    old_path  = [dir_root,fs,'s',num2str(i_s),fs,subj{i_s}.scanid,num2str(subj{i_s}.fieldmaps(2))];
-    if exist(old_path,'dir')==7; rmdir(old_path,'s'); end
+    for i = 1:2
+        old_path  = fullfile(project_params.data_dir,'s',num2str(i_s),...
+                strcat(subj{i_s}.scanid, '_FIL.S', num2str(subj{i_s}.fieldmaps(i))));
+        if exist(old_path,'dir')==7 
+            rmdir(old_path,'s'); 
+        end
+    end
         
     %% delete rest
-    for k = 1:size(subj{i_s}.delete,2) 
-    old_path  = [dir_root,fs,'s',num2str(i_s),fs,subj{i_s}.scanid,num2str(subj{i_s}.delete(k))];
-    if exist(old_path,'dir')==7; rmdir(old_path,'s'); end;
+    for k = 1:numel(subj{i_s}.delete) 
+        old_path = fullfile(project_params.data_dir,'s',num2str(i_s),...
+                strcat(subj{i_s}.scanid, '_FIL.S', num2str(subj{i_s}.delete(k))));
+        if exist(old_path,'dir')==7
+            rmdir(old_path,'s')
+        end
     end
     
 end
