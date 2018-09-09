@@ -7,6 +7,7 @@ function fil_mri_organise(which_subjects)
 % which_subjects is a vector
 %
 % Steve Fleming & Dan Bang, FIL, 07/06/2016
+% Ammended by Matan Mazor, FIL, 09/09/2018
 
 %% Current directory
 cwd = pwd;
@@ -15,11 +16,22 @@ cwd = pwd;
 load('subject_details.mat');
 
 % load project params file. 
-% IMPORTANT: this file should be edited before using this script.
+% IMPORTANT: this file should be edited before using this script. 
 load('D:\Documents\software\MetaLabCore\project_params.mat');
 
 %% Loop through scans
 for i_s = which_subjects;
+    
+    %% unzip data if not unzipped yet
+    if ~isdir(fullfile(project_params.data_dir,'s',num2str(i_s)))
+        %find relevant dir
+        raw_dirs = cellstr(ls(project_params.raw_dir));
+        indexC = strfind(raw_dirs, subj{i_s}.scanid);
+        index = find(not(cellfun('isempty', indexC)));
+        %unzip
+        fil_mri_unzip(raw_dirs{index},i_s)
+    end
+        
     
     %% localiser
     % paths
@@ -91,12 +103,9 @@ for i_s = which_subjects;
     end
         
     %% delete rest
-    for k = 1:numel(subj{i_s}.delete) 
-        old_path = fullfile(project_params.data_dir,'s',num2str(i_s),...
-                strcat(subj{i_s}.scanid, '_FIL.S', num2str(subj{i_s}.delete(k))));
-        if exist(old_path,'dir')==7
-            rmdir(old_path,'s')
-        end
+    old_path = fullfile(project_params.data_dir,'s',num2str(i_s));
+    if exist(old_path,'dir')==7
+        rmdir(old_path,'s')
     end
     
 end
