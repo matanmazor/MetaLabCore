@@ -18,45 +18,42 @@ function fil_fieldmap_preprocess(which_subjects)
 % which_subjects is a vector
 %
 % Steve Fleming & Dan Bang, FIL, 07/06/2016
+% Ammended by Matan Mazor, 09/09/2018
 
-%% DETAILS
-n_fun = 6; % 5 main task scans + 1 motion localiser scan
-sbj_v = which_subjects; % which subjects
 
-%% Directory paths and targets
-fs          = filesep;
-dbpath      = pathMacbook(0);
-dir_funct   = 'Functional';
-dir_block   = 'sess';
-dir_fm      = 'Fieldmaps';
-dir_root    = [dbpath,fs,'Ego',fs,'Matlab',fs,'ucl',fs,'sensory_vs_decision',fs,'brain',fs,'data'];
-dir_spm     = [dbpath,fs,'Ego',fs,'Matlab',fs,'spm12'];
+%%  load project params file. 
+% IMPORTANT: this file should be edited before using this script. 
+load('D:\Documents\software\MetaLabCore\project_params.mat');
+
+load(fullfile(project_params.raw_dir,'subject_details.mat'));
 
 %% Add SPM directory
-addpath(dir_spm);
+addpath(project_params.spm_dir);
 
 %% Fieldmap_preprocess parameters (see help Fieldmap_preprocess for details) 
-%% NB These are correct settings for FIL 32CH_FIELDMAP gre_field_mapping_1acq_rl
 te1             = 10.0;     % short echo time 
 te2             = 12.46;    % long echo time
 epifm           = 0;        % epi-based fieldmap (1/0)
-tert            = 37;       % total echo (EPI) readout time -- see EPI sequence
+tert            = 36;       % total echo (EPI) readout time -- see EPI sequence
 kdir            = -1;       % blip direction (+1/-1) -- see EPI sequence
 mask            = 1;        % (optional flag, default=1) Do brain masking or not (only if non-epi fieldmap)
 match           = 1;        % (optional flag, default=1) Match fieldmap to epi or not
 
 % loop through all subjects and sessions
 %===========================================================================
-for i_s = sbj_v
+for i_s = which_subjects
    
     % display current subject
     fprintf(['====SUBJECT ',num2str(i_s),': fieldmap pre-processing\n']);
     
     % functional
-    for j = 1:n_fun
+    for j = 1:numel(subj{i_s}.functional)
         % find folders
-        fm_dir  = [dir_root,fs,'s',num2str(i_s),fs,dir_fm,fs,dir_funct,fs,dir_block,num2str(j)];
-        epi_dir = [dir_root,fs,'s',num2str(i_s),fs,dir_funct,fs,dir_block,num2str(j)];
+        fm_dir = fullfile(project_params.data_dir,'s',strcat('sub-',subj{i_s}.scanid),...
+                            'func',strcat('run-',num2str(j)));
+        epi_dir = fullfile(project_params.data_dir,'s',strcat('sub-',subj{i_s}.scanid),...
+                            'func',strcat('run-',num2str(j)));
+                        
         % run fieldmap_preprocess
         FieldMap_preprocess(fm_dir,epi_dir,[te1, te2, epifm, tert, kdir, mask, match]);
         fprintf(['....pre-processing completed for main task block ',num2str(j),'\n']);

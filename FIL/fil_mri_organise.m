@@ -12,17 +12,19 @@ function fil_mri_organise(which_subjects)
 %% Current directory
 cwd = pwd;
 
-%% Load subject details (see fil_subject_details)
-load('subject_details.mat');
-
-% load project params file. 
+% Load project params file. 
 % IMPORTANT: this file should be edited before using this script. 
 load('D:\Documents\software\MetaLabCore\project_params.mat');
 
+%% Load subject details (see fil_subject_details)
+load(fullfile(project_params.raw_dir,'subject_details.mat'));
+
+%% Add SPM directory
+addpath(project_params.spm_dir);
+
 %% Loop through scans
 for i_s = which_subjects;
-    
-    %% unzip data if not unzipped yet
+    % unzip data if not unzipped yet
     if ~isdir(fullfile(project_params.data_dir,'s',num2str(i_s)))
         %find relevant dir
         raw_dirs = cellstr(ls(project_params.raw_dir));
@@ -35,13 +37,17 @@ for i_s = which_subjects;
     
     %% localiser
     % paths
-    old_path  = fullfile(project_params.data_dir,'s',num2str(i_s),...
-                strcat(subj{i_s}.scanid, '_FIL.S', num2str(subj{i_s}.localiser)));
-    new_path  = fullfile(project_params.data_dir,'s',...
-                strcat('sub-',subj{i_s}.scanid),'loc');
-    
-    % reorganise
-    reorganize(old_path, new_path,1);
+    if not(isempty(subj{i_s}.localiser))
+        
+        old_path  = fullfile(project_params.data_dir,'s',num2str(i_s),...
+                    strcat(subj{i_s}.scanid, '_FIL.S', num2str(subj{i_s}.localiser)));
+        new_path  = fullfile(project_params.data_dir,'s',...
+                    strcat('sub-',subj{i_s}.scanid),'loc');
+
+        % reorganise
+        reorganize(old_path, new_path,1);
+        
+    end
     
     %% structural
     % paths

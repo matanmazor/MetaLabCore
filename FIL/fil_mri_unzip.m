@@ -8,6 +8,7 @@ function fil_mri_unzip(FIL_id,subject)
 % place where I store the zipped data (saving space).
 %
 % Steve Fleming & Dan Bang, FIL, 07/06/2016
+% Ammended by Matan Mazor, FIL, 09/09/2018
 
 % current directy
 cwd = pwd;
